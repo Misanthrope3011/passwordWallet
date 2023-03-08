@@ -48,7 +48,7 @@ public class CustomAuthenticationProviderService implements AuthenticationProvid
     }
 
     private String generateSecret(UserEntity user) {
-        byte[] key = user.getKey().getBytes(StandardCharsets.UTF_8);
+        byte[] key = user.getDecryptionKey().getBytes(StandardCharsets.UTF_8);
         return new HmacUtils(HmacAlgorithms.HMAC_SHA_256, key).hmacHex(user.getUsername());
     }
 

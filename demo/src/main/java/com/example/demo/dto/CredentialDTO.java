@@ -2,6 +2,6 @@ package com.example.demo.dto;
 
 import lombok.Data;
 
-public record CredentialDTO(String credentialsName, String password, String description) {
+public record CredentialDTO(String password, String username, String name, String url, String description) {
 
 }

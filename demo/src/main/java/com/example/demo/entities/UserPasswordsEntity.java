@@ -15,8 +15,14 @@ public class UserPasswordsEntity {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "credential_name")
+    @Column(name = "name")
     private String name;
+
+    @Column(name = "username")
+    private String username;
+
+    @Column(name = "URL")
+    private String url;
 
     @Column(name = "description")
     private String description;

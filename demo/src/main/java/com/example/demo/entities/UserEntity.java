@@ -1,9 +1,11 @@
 package com.example.demo.entities;
 
+import com.example.demo.config.EncryptionType;
 import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
@@ -12,6 +14,7 @@ import java.util.List;
 @Table(name = "sampleUser")
 @Entity
 @Getter
+@Setter
 public class UserEntity implements UserDetails {
 
     @Id
@@ -22,12 +25,15 @@ public class UserEntity implements UserDetails {
     @Column(name = "username")
     private String username;
 
-    @Setter
     @Column(name = "password")
     private String password;
 
     @Column(name = "sample_key")
-    private String key;
+    private String decryptionKey;
+
+    @Enumerated(value = EnumType.STRING)
+    @Column(name = "encryption_type")
+    private EncryptionType encryptionType;
 
     @OneToMany(cascade = CascadeType.MERGE)
     @JoinColumn(referencedColumnName = "id")
@@ -55,7 +61,7 @@ public class UserEntity implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return null;
+        return List.of(new SimpleGrantedAuthority("ROLE_USER"));
     }
 
 }

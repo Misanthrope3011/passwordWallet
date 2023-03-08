@@ -4,6 +4,7 @@ import com.example.demo.dto.CredentialDTO;
 import com.example.demo.entities.UserEntity;
 import com.example.demo.entities.UserPasswordsEntity;
 import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 import org.mapstruct.factory.Mappers;
 
 @Mapper
@@ -11,8 +12,11 @@ public interface PasswordMapper {
 
 	PasswordMapper INSTANCE = Mappers.getMapper(PasswordMapper.class);
 
-	CredentialDTO mapToDTO(UserEntity user);
+	CredentialDTO mapToCredentialDTO(UserPasswordsEntity user);
 
-	UserEntity mapToUserEntity(CredentialDTO credentialDTO);
+	@Mapping(source = "url", target = "url")
+	@Mapping(source = "name", target = "name")
+	@Mapping(source = "username", target = "username")
+	UserPasswordsEntity mapToPasswordEntity(CredentialDTO credentialDTO);
 
 }

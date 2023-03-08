@@ -1,14 +1,18 @@
 package com.example.demo.services;
 
+import com.example.demo.config.EncryptionType;
+import com.example.demo.dto.CredentialDTO;
+import com.example.demo.entities.UserPasswordsEntity;
+import com.example.demo.mapper.PasswordMapper;
 import com.example.demo.repository.UserRepository;
 import com.example.demo.entities.UserEntity;
 import com.example.demo.exceptions.ExceptionHandler;
-import lombok.NonNull;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
-import org.apache.commons.codec.StringEncoder;
-import org.jasypt.encryption.StringEncryptor;
-import org.springframework.beans.factory.annotation.Qualifier;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.util.Pair;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -20,49 +24,71 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 import static javax.xml.crypto.dsig.SignatureMethod.HMAC_SHA512;
 
+@Slf4j
+@RequiredArgsConstructor
 @Service
 public class EncryptionService {
 
+    private static final String RANDOM_PHRASE = "sample";
     private final UserRepository userRepository;
+    private final PasswordsEncryptionService passwordsEncryptionService = new PasswordsEncryptionService();
+    private final ObjectMapper objectMapper;
 
-    private EncryptDecrypt
 
-    public void decryptPasswordsSHA(String username) {
-        List<Pair<String, String>> userPasswords = userRepository.findByUsername(username).orElseThrow(() -> new ExceptionHandler("sample")).getUserPasswords()
-                .stream()
-                .map(userPasswordsEntity -> Pair.of(userPasswordsEntity.getName(), userPasswordsEntity.getPassword()))
-                .map(password -> Pair.of(jasyptSHA512StringEncryptor.decrypt(password.getSecond()), password.getFirst()))
-                .toList();
+    public UserEntity encryptUserPassword(CredentialDTO credentialDTO) {
+        String username = SessionUtilsService.getSessionUserName();
+        UserEntity userEntity = userRepository.findByUsername(username).orElseThrow(() -> new ExceptionHandler("sample"));
+        UserPasswordsEntity userPasswordsEntity = PasswordMapper.INSTANCE.mapToPasswordEntity(credentialDTO);
+        userPasswordsEntity.setPassword(passwordsEncryptionService.encrypt(userPasswordsEntity.getPassword(), passwordsEncryptionService.generateKey(userEntity.getDecryptionKey())));
+        userEntity.getUserPasswords().add(userPasswordsEntity);
+
+       return userRepository.save(userEntity);
     }
 
-    public void decryptPasswordsHMAC(String username) {
-        List<Pair<String, String>> userPasswords = userRepository.findByUsername(username).orElseThrow(() -> new ExceptionHandler("sample")).getUserPasswords()
+    public List<UserPasswordsEntity> decryptUserPasswords() {
+        String username = SessionUtilsService.getSessionUserName();
+        UserEntity userEntity = userRepository.findByUsername(username).orElseThrow();
+        userEntity.getUserPasswords()
                 .stream()
-                .map(userPasswordsEntity -> Pair.of(userPasswordsEntity.getName(), userPasswordsEntity.getPassword()))
-                .map(password -> Pair.of(hmacJasyptSpringEncryptor.decrypt(password.getSecond()), password.getFirst()))
-                .toList();
+                .forEach(password -> {
+                    password.setPassword(passwordsEncryptionService.decrypt(password.getPassword(), passwordsEncryptionService.generateKey(userEntity.getDecryptionKey())));
+                });
+
+        return userEntity.getUserPasswords();
     }
 
-    public UserEntity encrypt(UserEntity userEntity, String algorithm) {
-         switch(algorithm) {
-            case "SHA512" -> {
-                userEntity.setPassword(jasyptSHA512StringEncryptor.encrypt(userEntity.getPassword()));
-                return userRepository.save(userEntity);
-            }
-            case "HMAC" ->  {
-                userEntity.setPassword(hmacJasyptSpringEncryptor.encrypt(userEntity.getPassword()));
-                return userRepository.save(userEntity);
-            }
-            default -> throw new ExceptionHandler("provided wrong encryption");
+    public String signUpUser(UserEntity userEntity, EncryptionType encryptionType) {
+        String decryptionKey = userEntity.getDecryptionKey() == null ? RANDOM_PHRASE.concat(UUID.randomUUID().toString()) : userEntity.getDecryptionKey();
+        userEntity.setDecryptionKey(decryptionKey);
+        userEntity.setEncryptionType(encryptionType);
+
+        try {
+            String encrypted = encrypt(userEntity.getPassword(), userEntity.getDecryptionKey(), userEntity.getEncryptionType());
+            userEntity.setPassword(encrypted);
+            userRepository.save(userEntity);
+            return objectMapper.writeValueAsString(userEntity);
+        } catch (JsonProcessingException ex) {
+            throw new ExceptionHandler("Error parsing json");
         }
     }
 
-    public UserEntity saveNewUser(UserEntity userEntity) {
-        return userRepository.save(userEntity);
+    public String encrypt(String password, String decryptionKey, EncryptionType algorithm) {
+        switch(algorithm.toString()) {
+            case "HMAC" -> {
+              return calculateHMAC(password, decryptionKey);
+            }
+            case "SHA512" -> {
+              return calculateSHA512(password);
+            }
+
+            default -> throw new ExceptionHandler("Wrong provided encryption");
+        }
+
     }
 
     public static String calculateSHA512(String text) {
@@ -99,7 +125,7 @@ public class EncryptionService {
         String result="";
         try {
             final byte[] byteKey = key.getBytes(StandardCharsets.UTF_8);
-            sha512Hmac = Mac.getInstance(HMAC_SHA512);
+            sha512Hmac = Mac.getInstance("HmacSHA256");
             SecretKeySpec keySpec = new SecretKeySpec(byteKey, HMAC_SHA512);
             sha512Hmac.init(keySpec);
             byte[] macData =
@@ -108,7 +134,6 @@ public class EncryptionService {
         } catch (InvalidKeyException | NoSuchAlgorithmException e) {
             e.printStackTrace();
         }
-
         return result;
     }
 

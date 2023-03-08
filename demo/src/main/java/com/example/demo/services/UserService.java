@@ -16,6 +16,10 @@ public class UserService {
 		return userRepository.findByUsername(username).orElseThrow(() -> new ExceptionHandler("no such username"));
 	}
 
+	public boolean isUserExists(String username) {
+		return userRepository.findByUsername(username).isPresent();
+	}
+
 	public boolean isUserUnique(UserEntity entity) {
 		return userRepository.findByUsername(entity.getUsername()).isPresent();
 	}
