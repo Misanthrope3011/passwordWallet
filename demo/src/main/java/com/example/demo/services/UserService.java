@@ -6,14 +6,16 @@ import com.example.demo.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import java.util.Optional;
+
 @Service
 @RequiredArgsConstructor
 public class UserService {
 
 	private final UserRepository userRepository;
 
-	public UserEntity findByUsername(String username) {
-		return userRepository.findByUsername(username).orElseThrow(() -> new ExceptionHandler("no such username"));
+	public Optional<UserEntity> findByUsername(String username) {
+		return userRepository.findByUsername(username);
 	}
 
 	public boolean isUserExists(String username) {

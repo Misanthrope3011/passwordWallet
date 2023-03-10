@@ -34,11 +34,9 @@ import static javax.xml.crypto.dsig.SignatureMethod.HMAC_SHA512;
 @Service
 public class EncryptionService {
 
-    private static final String RANDOM_PHRASE = "sample";
+    public static final String RANDOM_PHRASE = "sample";
     private final UserRepository userRepository;
     private final PasswordsEncryptionService passwordsEncryptionService = new PasswordsEncryptionService();
-    private final ObjectMapper objectMapper;
-
 
     public UserEntity encryptUserPassword(CredentialDTO credentialDTO) {
         String username = SessionUtilsService.getSessionUserName();
@@ -62,20 +60,6 @@ public class EncryptionService {
         return userEntity.getUserPasswords();
     }
 
-    public String signUpUser(UserEntity userEntity, EncryptionType encryptionType) {
-        String decryptionKey = userEntity.getDecryptionKey() == null ? RANDOM_PHRASE.concat(UUID.randomUUID().toString()) : userEntity.getDecryptionKey();
-        userEntity.setDecryptionKey(decryptionKey);
-        userEntity.setEncryptionType(encryptionType);
-
-        try {
-            String encrypted = encrypt(userEntity.getPassword(), userEntity.getDecryptionKey(), userEntity.getEncryptionType());
-            userEntity.setPassword(encrypted);
-            userRepository.save(userEntity);
-            return objectMapper.writeValueAsString(userEntity);
-        } catch (JsonProcessingException ex) {
-            throw new ExceptionHandler("Error parsing json");
-        }
-    }
 
     public String encrypt(String password, String decryptionKey, EncryptionType algorithm) {
         switch(algorithm.toString()) {

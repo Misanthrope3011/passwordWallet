@@ -4,8 +4,10 @@ import com.example.demo.config.EncryptionType;
 import com.example.demo.dto.CredentialDTO;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.entities.UserEntity;
+import com.example.demo.exceptions.ExceptionHandler;
 import com.example.demo.services.EncryptionService;
 import com.example.demo.services.SessionUtilsService;
+import com.example.demo.services.UserAuthenticationService;
 import com.example.demo.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
@@ -23,17 +25,21 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Optional;
+
 @RestController
 @RequiredArgsConstructor
 public class SimpleController {
 
     private final EncryptionService encryptionService;
     private final UserService userService;
+    private final UserAuthenticationService userAuthenticationService;
 
     @PutMapping("/user/changePassword/{encryptionType}")
     public ResponseEntity<UserEntity> encryptPassword(@PathVariable String encryptionType, @RequestBody CredentialDTO credentialDTO) {
         String currentUser = SessionUtilsService.getSessionUserName();
-        UserEntity userEntity = userService.findByUsername(currentUser);
+        UserEntity userEntity = userService.findByUsername(currentUser)
+                .orElseThrow(() -> new ExceptionHandler("Problem with your session has occured. Please log in again"));
         userEntity.setPassword(encryptionService.encrypt(credentialDTO.password(), userEntity.getDecryptionKey(), EncryptionType.valueOf(encryptionType)));
 
         return ResponseEntity.ok(userService.saveNewUser(userEntity));
@@ -53,20 +59,16 @@ public class SimpleController {
 
     @PostMapping("/login")
     public ResponseEntity<Object> sampleResponse(HttpServletRequest request, @RequestBody UserDTO userDTO) {
-        UserEntity entity = userService.findByUsername(userDTO.username());
-        String encryptedPassword = encryptionService.encrypt(userDTO.password(), entity.getDecryptionKey(), entity.getEncryptionType());
-        if(encryptedPassword.equals(entity.getPassword())) {
-            Authentication authReq = new UsernamePasswordAuthenticationToken(userDTO.username(), userDTO.password(), entity.getAuthorities());
-            SecurityContext sc = SecurityContextHolder.getContext();
-            sc.setAuthentication(authReq);
-            HttpSession session = request.getSession(true);
-            session.setAttribute("SPRING_SECURITY_CONTEXT", sc);
+        Optional<UserEntity> entity = userService.findByUsername(userDTO.username());
 
-            return ResponseEntity.ok("Logged in");
-        } else {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
+        if (entity.isPresent()){
+            UserEntity user = entity.get();
+            return userAuthenticationService.performLogin(request, userDTO, user);
         }
+
+           return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Invalid credentials");
     }
+
 
     @PostMapping("/signup/{encryption}")
     public ResponseEntity<Object> signUp(@RequestBody UserEntity user, @PathVariable String encryption) {
@@ -74,7 +76,7 @@ public class SimpleController {
         if (!userService.isUserExists(user.getUsername())) {
             EncryptionType encryptionType = EncryptionType.valueOf(encryption);
 
-            return ResponseEntity.ok(encryptionService.signUpUser(user, encryptionType));
+            return ResponseEntity.ok(userAuthenticationService.signUpUser(user, encryptionType));
         }
 
         return ResponseEntity.status(409).body("User already exists");
