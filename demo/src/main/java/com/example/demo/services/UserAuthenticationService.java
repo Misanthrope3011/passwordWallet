@@ -1,5 +1,6 @@
 package com.example.demo.services;
 
+import com.example.demo.config.CustomPasswordEncoder;
 import com.example.demo.config.EncryptionType;
 import com.example.demo.dto.UserDTO;
 import com.example.demo.entities.UserEntity;
@@ -10,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -24,6 +26,7 @@ import static com.example.demo.services.EncryptionService.RANDOM_PHRASE;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserAuthenticationService {
 
 	private final EncryptionService encryptionService;
@@ -46,6 +49,7 @@ public class UserAuthenticationService {
 	}
 
 	public ResponseEntity<Object> performLogin(HttpServletRequest request, UserDTO userDTO, UserEntity entity) {
+		new CustomPasswordEncoder(entity);
 		String encryptedPassword = encryptionService.encrypt(userDTO.password(), entity.getDecryptionKey(), entity.getEncryptionType());
 
 		if(encryptedPassword.equals(entity.getPassword())) {

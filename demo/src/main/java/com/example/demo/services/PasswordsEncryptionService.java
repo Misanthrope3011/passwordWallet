@@ -25,7 +25,7 @@ public class PasswordsEncryptionService {
 			throw new ExceptionHandler(ex.getMessage());
 		}
 	}
-	//decrypts string and returns plain text
+
 	public String decrypt(String encryptedData, Key key) {
 		try {
 			Cipher c = Cipher.getInstance(ALGO);

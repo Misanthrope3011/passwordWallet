@@ -2,17 +2,13 @@ package com.example.demo.services;
 
 import com.example.demo.config.EncryptionType;
 import com.example.demo.dto.CredentialDTO;
+import com.example.demo.entities.UserEntity;
 import com.example.demo.entities.UserPasswordsEntity;
+import com.example.demo.exceptions.ExceptionHandler;
 import com.example.demo.mapper.PasswordMapper;
 import com.example.demo.repository.UserRepository;
-import com.example.demo.entities.UserEntity;
-import com.example.demo.exceptions.ExceptionHandler;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.util.Pair;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import javax.crypto.Mac;
@@ -24,8 +20,6 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Base64;
 import java.util.List;
-import java.util.UUID;
-import java.util.stream.Collectors;
 
 import static javax.xml.crypto.dsig.SignatureMethod.HMAC_SHA512;
 
@@ -52,7 +46,6 @@ public class EncryptionService {
         String username = SessionUtilsService.getSessionUserName();
         UserEntity userEntity = userRepository.findByUsername(username).orElseThrow();
         userEntity.getUserPasswords()
-                .stream()
                 .forEach(password -> {
                     password.setPassword(passwordsEncryptionService.decrypt(password.getPassword(), passwordsEncryptionService.generateKey(userEntity.getDecryptionKey())));
                 });

@@ -72,14 +72,15 @@ public class SimpleController {
 
     @PostMapping("/signup/{encryption}")
     public ResponseEntity<Object> signUp(@RequestBody UserEntity user, @PathVariable String encryption) {
-
-        if (!userService.isUserExists(user.getUsername())) {
+        try {
             EncryptionType encryptionType = EncryptionType.valueOf(encryption);
-
-            return ResponseEntity.ok(userAuthenticationService.signUpUser(user, encryptionType));
+            if (!userService.isUserExists(user.getUsername())) {
+                return ResponseEntity.ok(userAuthenticationService.signUpUser(user, encryptionType));
+            }
+            return ResponseEntity.status(409).body("User already exists");
+        }  catch(Exception ex) {
+            return ResponseEntity.badRequest().body("Wrong encryption type provided");
         }
-
-        return ResponseEntity.status(409).body("User already exists");
     }
 
     @PostMapping("/logout")

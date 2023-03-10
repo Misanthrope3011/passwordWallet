@@ -1,10 +1,13 @@
 package com.example.demo.config;
 
+import com.example.demo.entities.UserEntity;
+import lombok.Getter;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Component;
 
-@Component
+@Getter
 public class CustomPasswordEncoder implements PasswordEncoder {
+
+	private UserEntity entity;
 
 	@Override
 	public String encode(CharSequence rawPassword) {
@@ -19,6 +22,10 @@ public class CustomPasswordEncoder implements PasswordEncoder {
 	@Override
 	public boolean upgradeEncoding(String encodedPassword) {
 		return PasswordEncoder.super.upgradeEncoding(encodedPassword);
+	}
+
+	public CustomPasswordEncoder(UserEntity entity) {
+		this.entity = entity;
 	}
 
 }
