@@ -77,17 +77,12 @@ public class SimpleController {
             if (!userService.isUserExists(user.getUsername())) {
                 return ResponseEntity.ok(userAuthenticationService.signUpUser(user, encryptionType));
             }
-            return ResponseEntity.status(409).body("User already exists");
-        }  catch(Exception ex) {
+        } catch(Exception ex) {
             return ResponseEntity.badRequest().body("Wrong encryption type provided");
         }
+
+        return ResponseEntity.status(409).body("User already exists");
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Void> logout(HttpServletRequest servletRequest) {
-        SecurityContextHolder.getContext().setAuthentication(null);
-
-        return ResponseEntity.noContent().build();
-    }
 
 }
