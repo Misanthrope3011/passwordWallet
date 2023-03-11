@@ -10,14 +10,9 @@ import com.example.demo.services.SessionUtilsService;
 import com.example.demo.services.UserAuthenticationService;
 import com.example.demo.services.UserService;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpSession;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -48,7 +43,7 @@ public class SimpleController {
     @PostMapping("/user/addCredentials")
     public ResponseEntity<Object> addCredentials(@RequestBody CredentialDTO credentialDTO) {
 
-        return ResponseEntity.ok(encryptionService.encryptUserPassword(credentialDTO));
+        return ResponseEntity.ok(encryptionService.encryptGivenUserCredentials(credentialDTO));
     }
 
     @GetMapping("/user/decode")

@@ -1,13 +1,17 @@
 package com.example.demo.entities;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 import lombok.Setter;
 import org.apache.catalina.User;
 
 @Entity(name = "usr_password")
 @Getter
 @Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class UserPasswordsEntity {
 
     @Id

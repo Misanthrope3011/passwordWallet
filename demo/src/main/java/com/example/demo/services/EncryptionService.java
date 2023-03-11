@@ -32,7 +32,7 @@ public class EncryptionService {
     private final UserRepository userRepository;
     private final PasswordsEncryptionService passwordsEncryptionService = new PasswordsEncryptionService();
 
-    public UserEntity encryptUserPassword(CredentialDTO credentialDTO) {
+    public UserEntity encryptGivenUserCredentials(CredentialDTO credentialDTO) {
         String username = SessionUtilsService.getSessionUserName();
         UserEntity userEntity = userRepository.findByUsername(username).orElseThrow(() -> new ExceptionHandler("sample"));
         UserPasswordsEntity userPasswordsEntity = PasswordMapper.INSTANCE.mapToPasswordEntity(credentialDTO);
@@ -102,7 +102,7 @@ public class EncryptionService {
         String result="";
         try {
             final byte[] byteKey = key.getBytes(StandardCharsets.UTF_8);
-            sha512Hmac = Mac.getInstance("HmacSHA256");
+            sha512Hmac = Mac.getInstance("HmacSHA512");
             SecretKeySpec keySpec = new SecretKeySpec(byteKey, HMAC_SHA512);
             sha512Hmac.init(keySpec);
             byte[] macData =
